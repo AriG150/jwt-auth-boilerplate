@@ -43,10 +43,35 @@ router.post('/signup', (req, res) => {
 //POST /auth/login
 router.post('/login', (req, res) => {
   //Find user in db
+  User.findOne({ email: req.body.email }, (err, user) => {
     //if no user, return err 
-    //if user, check auth 
-      //if authenticated, sign a token 
-      // return the token 
+    if (!user) {
+      res.json({
+        type: 'error',
+        message: 'Account not found'
+      })
+    } else {
+      //if user, check auth 
+      if (user.authenticated(req.body.password)) {
+        //if authenticated, sign a token 
+        const token = jwt.sign(user.toObject(), process.env.JWT_SECRET, {
+          expiresIn: '1d'
+        });
+        // return the token 
+        res.status(200).json({
+          type: 'success', 
+          user: user.toObject(),
+          token
+        })
+      } else {
+        //authentication failed
+        res.json({
+          type: 'error',
+          message: 'Authentication failure'
+        })
+      }
+    }
+  })
 });
 
 //POST /auth/me/from/token 
