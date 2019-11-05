@@ -30,7 +30,7 @@ router.post('/signup', (req, res) => {
           });
           //return the token
           res.status(200).json({
-            type: 'sucess', 
+            type: 'success', 
             user: user.toObject(),
             token
           })
@@ -77,12 +77,43 @@ router.post('/login', (req, res) => {
 //POST /auth/me/from/token 
 router.post('/me/from/token', (req, res) => {
   //request must contain a token
+  let token = req.body.token;
+  if (!token) {
     //if not token, return error
+    res.json({
+      type: 'error',
+      message: 'You must include a valid token'
+    })
+  } else {
     //if token, verify it
-      //if errors during verification, return error (bad token)
-      //if token is valid, use token to look up user in db 
-        //if no user, return error
-        //if user, return user and token to front 
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if(err) {
+        //if errors during verification, return error (bad token)
+        res.json({
+          type: 'error',
+          message: 'Invalid token. Please log in again.'
+        })
+      } else {
+        //if token is valid, use token to look up user in db 
+        User.findById(user._id, (err, user) => {
+          //if no user, return error
+          if (err) {
+            res.json({
+              type: 'error',
+              message: 'Database error during validation'
+            })
+          } else {
+            //if user, return user and token to front 
+            res.json({
+              type: 'success',
+              user: user.toObject(),
+              token
+            })
+          }
+        })
+      }
+    })
+  }
 });
 
 module.exports = router;
